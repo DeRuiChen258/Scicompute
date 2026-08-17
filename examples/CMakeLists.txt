@@ -1,0 +1,2 @@
+add_executable(simple_tensor simple_tensor.cpp)
+target_link_libraries(simple_tensor PRIVATE sci_compute)

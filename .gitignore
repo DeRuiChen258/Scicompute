@@ -1,0 +1,33 @@
+# Build directories
+build/
+_build/
+dist/
+*.build
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Compiled files
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Test outputs
+Testing/
+CTestTestfile.cmake
+
+# Documentation builds
+docs/_build/
