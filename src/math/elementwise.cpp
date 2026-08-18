@@ -55,7 +55,7 @@ Result<Tensor> add(const Tensor& a, const Tensor& b, Stream* stream) {
     
     ref::add_f32(a_data, b_data, out_data, n);
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 Result<Tensor> add(const Tensor& a, const Tensor& b, const Tensor& out, Stream* stream) {
@@ -95,7 +95,7 @@ Result<Tensor> add_scalar(const Tensor& a, float scalar, Stream* stream) {
         out_data[i] = a_data[i] + scalar;
     }
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 Result<Tensor> sub(const Tensor& a, const Tensor& b, Stream* stream) {
@@ -111,7 +111,7 @@ Result<Tensor> sub(const Tensor& a, const Tensor& b, Stream* stream) {
     
     ref::sub_f32(a_data, b_data, out_data, n);
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 Result<Tensor> mul(const Tensor& a, const Tensor& b, Stream* stream) {
@@ -127,7 +127,7 @@ Result<Tensor> mul(const Tensor& a, const Tensor& b, Stream* stream) {
     
     ref::mul_f32(a_data, b_data, out_data, n);
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 void mul_scalar_inplace(Tensor& a, float scalar, Stream* stream) {
@@ -152,7 +152,7 @@ Result<Tensor> div(const Tensor& a, const Tensor& b, Stream* stream) {
     
     ref::div_f32(a_data, b_data, out_data, n);
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 Result<Tensor> negate(const Tensor& a, Stream* stream) {
@@ -166,7 +166,7 @@ Result<Tensor> negate(const Tensor& a, Stream* stream) {
         out_data[i] = -a_data[i];
     }
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 Result<Tensor> abs(const Tensor& a, Stream* stream) {
@@ -180,7 +180,7 @@ Result<Tensor> abs(const Tensor& a, Stream* stream) {
         out_data[i] = std::abs(a_data[i]);
     }
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 Result<Tensor> sqrt(const Tensor& a, Stream* stream) {
@@ -194,7 +194,7 @@ Result<Tensor> sqrt(const Tensor& a, Stream* stream) {
         out_data[i] = std::sqrt(a_data[i]);
     }
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 Result<Tensor> rsqrt(const Tensor& a, Stream* stream) {
@@ -208,7 +208,7 @@ Result<Tensor> rsqrt(const Tensor& a, Stream* stream) {
         out_data[i] = 1.0f / std::sqrt(a_data[i]);
     }
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 Result<Tensor> pow(const Tensor& a, float exponent, Stream* stream) {
@@ -222,7 +222,7 @@ Result<Tensor> pow(const Tensor& a, float exponent, Stream* stream) {
         out_data[i] = std::pow(a_data[i], exponent);
     }
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 Result<Tensor> clamp(const Tensor& a, float min_val, float max_val, Stream* stream) {
@@ -236,7 +236,7 @@ Result<Tensor> clamp(const Tensor& a, float min_val, float max_val, Stream* stre
         out_data[i] = std::clamp(a_data[i], min_val, max_val);
     }
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 } // namespace math

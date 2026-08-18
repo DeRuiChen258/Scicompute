@@ -91,7 +91,7 @@ Result<Tensor> softmax(const Tensor& a, int axis, Stream* stream) {
         return MakeUnexpected<Tensor>(Status::NotImplemented("Only last-axis softmax supported"));
     }
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 Result<Tensor> log_softmax(const Tensor& a, int axis, Stream* stream) {
@@ -116,7 +116,7 @@ Result<Tensor> log_softmax(const Tensor& a, int axis, Stream* stream) {
         return MakeUnexpected<Tensor>(Status::NotImplemented("Only last-axis log_softmax supported"));
     }
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 Result<Tensor> softmax_with_temperature(const Tensor& a, float temperature,
@@ -166,7 +166,7 @@ Result<Tensor> hardmax(const Tensor& a, int axis, Stream* stream) {
         }
     }
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 Result<Tensor> softmax_stable(const Tensor& a, int axis, Stream* stream) {

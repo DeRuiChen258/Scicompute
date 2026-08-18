@@ -32,6 +32,34 @@ public:
     static Tensor Zeros(const TensorShape& shape, DType dtype, Device& device);
     static Tensor Ones(const TensorShape& shape, DType dtype, Device& device);
     static Tensor Full(const TensorShape& shape, DType dtype, Device& device, const void* value);
+
+    // initializer_list convenience overloads (mirror PyTorch style)
+    static Tensor Empty(std::initializer_list<index_t> dims, DType dtype, Device& device) {
+        return Empty(TensorShape(dims), dtype, device);
+    }
+    static Tensor Zeros(std::initializer_list<index_t> dims, DType dtype, Device& device) {
+        return Zeros(TensorShape(dims), dtype, device);
+    }
+    static Tensor Ones(std::initializer_list<index_t> dims, DType dtype, Device& device) {
+        return Ones(TensorShape(dims), dtype, device);
+    }
+    static Tensor Full(std::initializer_list<index_t> dims, DType dtype, Device& device, const void* value) {
+        return Full(TensorShape(dims), dtype, device, value);
+    }
+    // Scalar convenience overloads so callers can pass float/int without
+    // an explicit cast to const void*.
+    static Tensor Full(std::initializer_list<index_t> dims, DType dtype, Device& device, float value) {
+        return Full(TensorShape(dims), dtype, device, &value);
+    }
+    static Tensor Full(std::initializer_list<index_t> dims, DType dtype, Device& device, double value) {
+        return Full(TensorShape(dims), dtype, device, &value);
+    }
+    static Tensor Full(std::initializer_list<index_t> dims, DType dtype, Device& device, int32_t value) {
+        return Full(TensorShape(dims), dtype, device, &value);
+    }
+    static Tensor Full(std::initializer_list<index_t> dims, DType dtype, Device& device, int64_t value) {
+        return Full(TensorShape(dims), dtype, device, &value);
+    }
     static Tensor Rand(const TensorShape& shape, DType dtype, Device& device);
     static Tensor Randn(const TensorShape& shape, DType dtype, Device& device);
     
@@ -213,4 +241,21 @@ inline TensorOptions device(Device& dev) { return TensorOptions().set_device(dev
 inline TensorOptions device(DeviceType type, int id = 0) { return TensorOptions().set_device(type, id); }
 inline TensorOptions layout(Layout l) { return TensorOptions().set_layout(l); }
 
-} // namespace sci
+// Scalar convenience overloads for Tensor::Full (initializer_list + value).
+// These accept the common C++ scalar types without an explicit cast to
+// const void*. They are wrapped into inline helpers rather than members
+// because overload resolution prefers them over the const void* version.
+inline Tensor Full(std::initializer_list<index_t> dims, DType dtype, Device& device, float value) {
+    return Tensor::Full(TensorShape(dims), dtype, device, &value);
+}
+inline Tensor Full(std::initializer_list<index_t> dims, DType dtype, Device& device, double value) {
+    return Tensor::Full(TensorShape(dims), dtype, device, &value);
+}
+inline Tensor Full(std::initializer_list<index_t> dims, DType dtype, Device& device, int32_t value) {
+    return Tensor::Full(TensorShape(dims), dtype, device, &value);
+}
+inline Tensor Full(std::initializer_list<index_t> dims, DType dtype, Device& device, int64_t value) {
+    return Tensor::Full(TensorShape(dims), dtype, device, &value);
+}
+
+}  // namespace sci

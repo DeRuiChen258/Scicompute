@@ -126,7 +126,7 @@ class TensorShape {
 public:
     TensorShape() = default;
     
-    explicit TensorShape(std::initializer_list<index_t> dims) {
+    TensorShape(std::initializer_list<index_t> dims) {
         ndims_ = static_cast<index_t>(dims.size());
         size_t i = 0;
         for (auto d : dims) {
@@ -134,14 +134,14 @@ public:
         }
     }
     
-    explicit TensorShape(const std::vector<index_t>& dims) {
+    TensorShape(const std::vector<index_t>& dims) {
         ndims_ = static_cast<index_t>(dims.size());
         for (index_t i = 0; i < ndims_; ++i) {
             dims_[i] = dims[i];
         }
     }
     
-    explicit TensorShape(const std::array<index_t, kMaxDim>& dims, index_t ndims) {
+    TensorShape(const std::array<index_t, kMaxDim>& dims, index_t ndims) {
         ndims_ = ndims;
         for (index_t i = 0; i < ndims; ++i) {
             dims_[i] = dims[i];
@@ -159,6 +159,7 @@ public:
     bool empty() const { return ndims_ == 0; }
     
     index_t num_elements() const {
+        if (ndims_ == 0) return 0;
         index_t n = 1;
         for (index_t i = 0; i < ndims_; ++i) {
             n *= dims_[i];

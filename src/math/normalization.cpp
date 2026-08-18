@@ -88,7 +88,7 @@ Result<Tensor> layer_norm(const Tensor& x, const Tensor& weight, const Tensor& b
     
     ref::layer_norm_f32(x_data, w_data, b_data, out_data, rows, cols, eps);
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 Result<Tensor> layer_norm(const Tensor& x, const std::vector<int>& normalized_shape,
@@ -126,7 +126,7 @@ Result<Tensor> rms_norm(const Tensor& x, const Tensor& weight,
     
     ref::rms_norm_f32(x_data, w_data, out_data, rows, cols, eps);
     
-    return Ok(std::move(out));
+    return Ok<Tensor>(std::move(out));
 }
 
 Result<Tensor> rms_norm(const Tensor& x, const std::vector<int>& normalized_shape,

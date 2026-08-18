@@ -151,27 +151,20 @@ Result<Tensor> Tensor::to(DeviceType type, int device_id) const {
     if (!device) {
         return MakeUnexpected<Tensor>(Status::InvalidArgument("Invalid device type"));
     }
-    return Ok(to(*device));
+    return Ok<sci::Tensor>(to(*device));
 }
 
 void Tensor::fill(const void* value) {
     size_t elem_size = kDTypeSize(dtype_);
     size_t n = num_elements();
+    if (n == 0) return;
     char* data = static_cast<char*>(buffer_.data());
-    
-    // Copy value to first element
+
+    // Seed the first element with the value, then double-broadcast until full.
     std::memcpy(data, value, elem_size);
-    
-    // Broadcast fill
-    size_t i = 1;
-    size_t chunk = std::min(n, static_cast<size_t>(64 / elem_size));
-    while (i < chunk) {
-        std::memcpy(data + i * elem_size, data, chunk * elem_size);
-        i = chunk;
-        chunk = std::min(n - i, chunk * 2);
-    }
-    if (i < n) {
-        std::memcpy(data + i * elem_size, data, (n - i) * elem_size);
+    for (size_t step = 1; step < n; step *= 2) {
+        size_t copy = std::min(step, n - step);
+        std::memcpy(data + step * elem_size, data, copy * elem_size);
     }
 }
 
@@ -214,7 +207,7 @@ bool Tensor::is_same_shape(const Tensor& other) const {
 
 Result<Tensor> Tensor::to_dtype(DType new_dtype) const {
     if (dtype_ == new_dtype) {
-        return Ok(clone());
+        return Ok<Tensor>(clone());
     }
     return MakeUnexpected<Tensor>(Status::NotImplemented("Dtype conversion not yet implemented"));
 }

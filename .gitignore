@@ -1,5 +1,8 @@
 # Build directories
 build/
+build_check/
+build_full/
+build_tsan/
 _build/
 dist/
 *.build

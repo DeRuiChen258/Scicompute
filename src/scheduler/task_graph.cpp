@@ -1,4 +1,5 @@
 #include "scheduler/task_graph.hpp"
+#include <algorithm>
 #include "scheduler/thread_pool.hpp"
 
 namespace sci {
@@ -101,26 +102,29 @@ std::vector<Task::Id> TaskGraph::topological_sort() const {
     std::vector<Task::Id> result;
     std::unordered_set<Task::Id> visited;
     std::unordered_set<Task::Id> in_stack;
-    
+
     std::function<bool(Task::Id)> dfs = [&](Task::Id id) -> bool {
         if (in_stack.count(id)) return false;
         if (visited.count(id)) return true;
-        
+
         visited.insert(id);
         in_stack.insert(id);
-        
+
+        // add_edge(from, to) means "from must run before to". Recurse into
+        // successors first so they get pushed earlier, then reverse the
+        // final vector to recover a forward topological order.
         auto it = edges_.find(id);
         if (it != edges_.end()) {
             for (auto dep : it->second) {
                 if (!dfs(dep)) return false;
             }
         }
-        
+
         in_stack.erase(id);
         result.push_back(id);
         return true;
     };
-    
+
     for (const auto& [id, _] : tasks_) {
         if (!visited.count(id)) {
             if (!dfs(id)) {
@@ -128,7 +132,8 @@ std::vector<Task::Id> TaskGraph::topological_sort() const {
             }
         }
     }
-    
+
+    std::reverse(result.begin(), result.end());
     return result;
 }
 
@@ -231,13 +236,22 @@ void GraphExecutor::process_ready_tasks(TaskGraph& graph) {
     auto ready = graph.get_ready_tasks();
     for (auto id : ready) {
         if (cancelled_.load()) break;
-        
+
         auto task = graph.get_task(id);
         if (!task) continue;
-        
-        running_tasks_.insert(id);
+
+        {
+            // 防止同一任务在执行完成前被重复入队:
+            // task->status() 只在 execute() 真正运行时才切换,
+            // 若仅检查 status 会漏掉"已入队但尚未运行"的任务。
+            std::lock_guard lock(mtx_);
+            if (running_tasks_.count(id) || completed_tasks_.count(id)) {
+                continue;
+            }
+            running_tasks_.insert(id);
+        }
         running_.fetch_add(1);
-        
+
         if (thread_pool_) {
             thread_pool_->enqueue([this, id, task]() {
                 Task::Status status = task->execute();
@@ -269,7 +283,12 @@ bool GraphExecutor::all_complete(const TaskGraph& graph) const {
 Status GraphExecutor::execute(TaskGraph& graph) {
     cancelled_.store(false);
     completed_.store(0);
-    
+    {
+        std::lock_guard lock(mtx_);
+        running_tasks_.clear();
+        completed_tasks_.clear();
+    }
+
     if (!graph.is_valid()) {
         return Status::InvalidArgument("Invalid task graph");
     }
