@@ -120,6 +120,15 @@ void CudaDevice::copy_from_device(void* dst, const void* src, size_t bytes) {
     copy_to_device(dst, src, bytes);
 }
 
+void CudaDevice::copy_within(void* dst, const void* src, size_t bytes) {
+#ifdef SCI_USE_CUDA
+    if (!available(device_id_) || !dst || !src) return;
+    cudaMemcpy(dst, src, bytes, cudaMemcpyDeviceToDevice);
+#else
+    (void)dst; (void)src; (void)bytes;
+#endif
+}
+
 void CudaDevice::copy_async(void* dst, const void* src, size_t bytes, Stream& stream) {
 #ifdef SCI_USE_CUDA
     if (!available(device_id_) || !dst || !src) return;

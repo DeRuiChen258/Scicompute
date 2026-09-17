@@ -40,6 +40,11 @@ public:
     
     virtual void copy_to_device(void* dst, const void* src, size_t bytes) = 0;
     virtual void copy_to_host(void* dst, const void* src, size_t bytes) = 0;
+    // 同一设备内部拷贝：默认主机 memcpy，设备后端覆盖为设备内拷贝
+    // （例如 cudaMemcpyDeviceToDevice），避免把设备指针交给主机 memcpy。
+    virtual void copy_within(void* dst, const void* src, size_t bytes) {
+        std::memcpy(dst, src, bytes);
+    }
     virtual void copy_from_device(void* dst, const void* src, size_t bytes) {
         copy_to_host(dst, src, bytes);
     }
@@ -127,6 +132,9 @@ public:
     
 private:
     DeviceManager();
+
+    // 在已注册设备中按类型/id 查找（不触发自动探测）
+    std::shared_ptr<Device> find_device(DeviceType type, int id) const;
     
     DeviceId next_device_id_ = 1;
     DeviceId next_callback_id_ = 1;

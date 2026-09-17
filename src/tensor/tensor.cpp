@@ -6,6 +6,27 @@
 
 namespace sci {
 
+namespace {
+
+// 跨设备拷贝：按方向选择发起端，避免把设备指针当主机指针解引用。
+//   Host → Device : 目标设备 copy_to_device
+//   Device → Host : 源设备   copy_to_host
+//   Device → Device（不同设备 id）: 经主机暂存中转
+void CopyAcrossDevices(Device& src_device, const void* src,
+                       Device& dst_device, void* dst, size_t bytes) {
+    if (src_device.type() == DeviceType::kCPU) {
+        dst_device.copy_to_device(dst, src, bytes);
+    } else if (dst_device.type() == DeviceType::kCPU) {
+        src_device.copy_to_host(dst, src, bytes);
+    } else {
+        std::vector<uint8_t> staging(bytes);
+        src_device.copy_to_host(staging.data(), src, bytes);
+        dst_device.copy_to_device(dst, staging.data(), bytes);
+    }
+}
+
+} // namespace
+
 // ============================================================================
 // Tensor Implementation
 // ============================================================================
@@ -137,11 +158,10 @@ Tensor Tensor::clone() const {
 
 Tensor Tensor::to(Device& target_device) const {
     Tensor t(shape_, dtype_, target_device);
-    if (device_->type() == target_device.type()) {
+    if (device_->type() == target_device.type() && device_->id() == target_device.id()) {
         t.copy_from(*this);
     } else {
-        // Cross-device copy
-        target_device.copy_from_device(t.data(), buffer_.data(), num_bytes());
+        CopyAcrossDevices(*device_, buffer_.data(), target_device, t.data(), num_bytes());
     }
     return t;
 }
@@ -188,11 +208,10 @@ void Tensor::copy_from(const Tensor& other) {
     SCI_ASSERT(dtype_ == other.dtype_, "Dtype mismatch for copy");
     
     size_t bytes = num_bytes();
-    if (device_->type() == other.device_->type()) {
-        device_->copy_to_device(buffer_.data(), other.buffer_.data(), bytes);
+    if (device_->type() == other.device_->type() && device_->id() == other.device_->id()) {
+        device_->copy_within(buffer_.data(), other.buffer_.data(), bytes);
     } else {
-        // Cross-device copy
-        device_->copy_from_device(buffer_.data(), other.buffer_.data(), bytes);
+        CopyAcrossDevices(*other.device_, other.buffer_.data(), *device_, buffer_.data(), bytes);
     }
 }
 

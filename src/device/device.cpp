@@ -80,17 +80,26 @@ DeviceManager& DeviceManager::Instance() {
     return instance;
 }
 
-std::shared_ptr<Device> DeviceManager::get_device(DeviceType type, int id) {
-    if (type == DeviceType::kCPU) {
-        return cpu_device;
-    }
-    // 查找其他类型设备
-    for (auto& [dev_id, device] : devices_) {
-        if (device->type() == type && device->id() == id) {
+std::shared_ptr<Device> DeviceManager::find_device(DeviceType type, int id) const {
+    for (const auto& [dev_id, device] : devices_) {
+        if (device && device->type() == type && device->id() == id) {
             return device;
         }
     }
     return nullptr;
+}
+
+std::shared_ptr<Device> DeviceManager::get_device(DeviceType type, int id) {
+    if (type == DeviceType::kCPU) {
+        return cpu_device;
+    }
+    if (auto device = find_device(type, id)) {
+        return device;
+    }
+    // 首次按类型查找非 CPU 设备（如 CUDA:0）时自动探测一次，
+    // 避免调用方必须先显式 ScanDevices() 才能拿到 GPU 设备。
+    ScanDevices();
+    return find_device(type, id);
 }
 
 std::shared_ptr<Device> DeviceManager::get_default_device() {

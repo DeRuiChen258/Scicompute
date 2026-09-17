@@ -243,8 +243,20 @@ TEST(IntegrationTensorOpsTest, CrossDeviceTransfer) {
     if (CudaDevice::available(0)) {
         ASSERT_TRUE(cuda.ok());
         EXPECT_EQ(cuda->device_type(), DeviceType::kCUDA);
+
+        // 显存指针不能由 host 直接解引用：拷回 CPU 后校验数值（同时验证回程拷贝）
+        auto round_trip = cuda->to(DeviceType::kCPU, 0);
+        ASSERT_TRUE(round_trip.ok());
         for (size_t i = 0; i < 8; ++i) {
-            EXPECT_FLOAT_EQ(cuda->data_ptr<float>()[i], 1.0f);
+            EXPECT_FLOAT_EQ(round_trip->data_ptr<float>()[i], 1.0f);
+        }
+
+        // 同设备（显存内）克隆也必须走设备内拷贝，而不是主机 memcpy
+        auto cloned = cuda->clone();
+        auto cloned_back = cloned.to(DeviceType::kCPU, 0);
+        ASSERT_TRUE(cloned_back.ok());
+        for (size_t i = 0; i < 8; ++i) {
+            EXPECT_FLOAT_EQ(cloned_back->data_ptr<float>()[i], 1.0f);
         }
     } else {
         ASSERT_FALSE(cuda.ok());

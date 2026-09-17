@@ -28,6 +28,7 @@ public:
 
     void copy_to_device(void* dst, const void* src, size_t bytes) override;
     void copy_to_host(void* dst, const void* src, size_t bytes) override;
+    void copy_within(void* dst, const void* src, size_t bytes) override;
     void copy_from_device(void* dst, const void* src, size_t bytes) override;
     void copy_async(void* dst, const void* src, size_t bytes, Stream& stream) override;
 
