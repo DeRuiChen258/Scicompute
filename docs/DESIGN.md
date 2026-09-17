@@ -137,7 +137,10 @@
 
 ---
 
-## 4. Directory Structure
+## 4. Directory Structure（目标布局）
+
+> 下面是设计目标布局；**当前仓库实际结构**以 [README §8](../README.md#8-目录结构) 为准
+> （例如 `cmake/`、`python/`、`docs/architecture.md` 等尚未落地）。
 
 ```
 SciComputeInfra/

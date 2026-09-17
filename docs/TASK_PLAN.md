@@ -4,7 +4,7 @@
 
 - **项目名称**: SciComputeInfra (AI Scientific Computing Infrastructure)
 - **目标**: 高性能计算运行时 + CUDA Kernel库 + Tensor运行时 + 调度系统 + 基准测试体系
-- **工作区**: 本仓库
+- **工作区**: 本仓库（SciComputeInfra）
 - **版本**: 0.1.0
 
 ---
@@ -187,8 +187,8 @@ SciComputeInfra/
 │   └── unit/           ✅ 单元测试
 ├── benchmarks/
 ├── examples/           ✅ simple_tensor等示例
-├── TASK_PLAN.md
-├── DESIGN.md
+├── docs/               ✅ DESIGN.md（架构设计）、TASK_PLAN.md（本文件）
+├── LICENSE             ✅ MIT
 └── README.md
 ```
 
@@ -231,10 +231,26 @@ cmake .. -DCMAKE_BUILD_TYPE=Release -DSCI_BUILD_TESTS=ON
 
 ---
 
-## ✅ 验证记录 (2026-08-18)
+## ✅ 验证记录 (2026-08-18，开发机无 GPU 驱动)
 
 - **CUDA ON 构建** (Release, tests + benchmarks): 通过, `ctest` 55/55 通过
 - **CPU-only 构建** (Release, tests + benchmarks): 通过, `ctest` 55/55 通过
 - **ThreadSanitizer**: `test_integration_scheduler` 4/4 通过, 无竞态报告
 - **Benchmarks**: 6 个 benchmark (elementwise / reduction / softmax / layernorm / transformer / attention) 全部运行验证通过
 - **运行环境说明**: 当前机器无 NVIDIA 驱动, CUDA 后端编译可用但运行时自动降级 (`CudaDevice::available()` 返回 false, 跨设备迁移返回明确错误)
+
+## ✅ 验证记录 (2026-09-17，RTX 5070 Laptop + CUDA 13.2)
+
+- **CUDA ON 构建** (Release, tests + benchmarks): 通过, `ctest` **56/56** 通过
+- **CPU-only 构建** (Release, tests): 通过, `ctest` **56/56** 通过
+- **基准**: `benchmark_test` + 6 个 Google Benchmark 全部运行通过（数据见 README §6）
+- **本轮修复**（在有 GPU 的机器上暴露）:
+  1. `DeviceManager::get_device()` 首次查询非 CPU 设备时自动 `ScanDevices()`，
+     否则 `Tensor::to(kCUDA,0)` 在 GPU 机器上返回 "Invalid device type"
+  2. `Tensor::to()`/`copy_from()` 增加方向感知的跨设备拷贝（Host→Device 用目标设备、
+     Device→Host 用源设备、设备间经主机暂存），修复 CUDA→CPU 回拷时用主机 memcpy 读显存导致的段错误
+  3. 新增 `Device::copy_within()`（CUDA 后端为 `cudaMemcpyDeviceToDevice`），
+     修复同设备克隆在显存上仍走主机 memcpy 的问题
+  4. `CrossDeviceTransfer` 集成测试改为「拷回主机后校验」，并增加显存内克隆断言
+  5. CMake：CUDA 路径不再硬编码 `/usr/local/cuda-13.2`，改用 `FindCUDAToolkit`；
+     架构列表改为可覆盖的 `SCI_CUDA_ARCHITECTURES`
