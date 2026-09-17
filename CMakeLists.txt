@@ -16,8 +16,12 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 if(SCI_ENABLE_CUDA)
-    # RTX 13.2 GPU support (compute capability 8.9, 9.0)
-    set(CMAKE_CUDA_ARCHITECTURES 75;89;90;120)
+    # 默认覆盖常见架构；可通过 -DSCI_CUDA_ARCHITECTURES="89;120" 覆盖。
+    # 注意不能用 CMAKE_CUDA_ARCHITECTURES 直接放缓存变量：CMake 在 project()
+    # 检测 CUDA 编译器时已写入该缓存项，不带 FORCE 的 set(... CACHE ...) 会被忽略。
+    set(SCI_CUDA_ARCHITECTURES "75;89;90;120"
+        CACHE STRING "CUDA architectures to build for")
+    set(CMAKE_CUDA_ARCHITECTURES "${SCI_CUDA_ARCHITECTURES}")
     add_definitions(-DSCI_ENABLE_CUDA=1 -DSCI_USE_CUDA=1)
 endif()
 
@@ -27,28 +31,10 @@ endif()
 
 find_package(Threads REQUIRED)
 
-# CUDA libraries
+# CUDA libraries：由 FindCUDAToolkit 解析（CUDA::cudart / CUDA::cublas / CUDA::cusparse），
+# 可用 -DCUDAToolkit_ROOT=/path/to/cuda 指定非默认安装位置
 if(SCI_ENABLE_CUDA)
-    set(CUDA_INCLUDE_DIRS /usr/local/cuda-13.2/include)
-    set(CUDA_LIBRARY_DIRS /usr/local/cuda-13.2/lib64)
-    
-    add_library(CUDA::cudart SHARED IMPORTED)
-    set_target_properties(CUDA::cudart PROPERTIES
-        IMPORTED_LOCATION "${CUDA_LIBRARY_DIRS}/libcudart.so"
-        INTERFACE_INCLUDE_DIRECTORIES "${CUDA_INCLUDE_DIRS}"
-    )
-    
-    add_library(CUDA::cublas SHARED IMPORTED)
-    set_target_properties(CUDA::cublas PROPERTIES
-        IMPORTED_LOCATION "${CUDA_LIBRARY_DIRS}/libcublas.so"
-        INTERFACE_LINK_LIBRARIES "CUDA::cudart"
-    )
-    
-    add_library(CUDA::cusparse SHARED IMPORTED)
-    set_target_properties(CUDA::cusparse PROPERTIES
-        IMPORTED_LOCATION "${CUDA_LIBRARY_DIRS}/libcusparse.so"
-        INTERFACE_LINK_LIBRARIES "CUDA::cudart"
-    )
+    find_package(CUDAToolkit REQUIRED)
 endif()
 
 add_subdirectory(src)
